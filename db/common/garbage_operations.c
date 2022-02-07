@@ -19,7 +19,7 @@ int compareRows (const void* a, const void* b) {
     return ( *(int*)a - *(int*)b );
 }
 
-void clearGarbage(const TableData* table, size_t entrySize) {
+void clearGarbage(const TableData* table) {
     size_t garbageFileSize = fileSize(table->garbageFile);
     size_t garbageCount = garbageFileSize / GARBAGE_ENTRY_SIZE;
 
@@ -42,22 +42,22 @@ void clearGarbage(const TableData* table, size_t entrySize) {
     int currGarbageIndex = 0;
     int currGarbageRow = garbageRows[currGarbageIndex];
 
-    void* tempEntry = malloc(entrySize);
+    void* tempEntry = malloc(table->entrySize);
     for (int row = 0; row < validRowsCount; ++row) {
         if (currGarbageRow == row && currGarbageIndex < garbageCount) {
             currGarbageIndex++;
             currGarbageRow = garbageRows[currGarbageIndex];
         }
 
-        readEntryAt(table->dataFile, tempEntry, entrySize, row + currGarbageIndex);
+        readEntryAt(table->dataFile, tempEntry, table->entrySize, row + currGarbageIndex);
 
         indexEntries[row].id = table->getId(tempEntry);
         indexEntries[row].row = row;
 
-        writeEntryAt(table->dataFile, tempEntry, entrySize, row);
+        writeEntryAt(table->dataFile, tempEntry, table->entrySize, row);
     }
 
-    _chsize_s(_fileno(table->dataFile), validRowsCount * entrySize);
+    _chsize_s(_fileno(table->dataFile), validRowsCount * table->entrySize);
 
     overwriteEntries(table->indexFile, indexEntries, INDEX_ENTRY_SIZE, validRowsCount);
     sortIndex(table);

@@ -22,6 +22,7 @@ typedef struct TableData {
     FILE* indexFile;
     FILE* garbageFile;
 
+    int entrySize;
     int (*getId)(const void* entry);
 } TableData;
 
@@ -51,20 +52,20 @@ void clearFile(FILE* file);
 int findRowNumber(const TableData* table, int id);
 int findRowNumbers(const TableData* table, int* numbers, int numbersCount, int id);
 
-int readRow(const TableData* table, void* entry, size_t entrySize, int id);
-int readNotUniqueRow(const TableData* table, void* entry, size_t entrySize, int id, int (*compare)(void* compareData, void* b), void* compareData);
+int readRow(const TableData* table, void* entry, int id);
+int readNotUniqueRow(const TableData* table, void* entry, int id, int (*compare)(void* compareData, void* b), void* compareData);
 
 int countRows(const TableData* table, int id);
-int readRows(const TableData* table, void* entries, size_t entrySize, int entriesCount, int id);
+int readRows(const TableData* table, void* entries, int entriesCount, int id);
 
-void insertRow(const TableData* table, void* entry, size_t entrySize, int id);
+void insertRow(const TableData* table, void* entry, int id);
 
-int updateRow(const TableData* table, void* entry, size_t entrySize);
-int updateNotUniqueRow(const TableData* table, void* entry, size_t entrySize, int (*compare)(void* compareData, void* b), void* compareData);
+int updateRow(const TableData* table, void* entry);
+int updateNotUniqueRow(const TableData* table, void* entry, int (*compare)(void* compareData, void* b), void* compareData);
 
 int deleteRow(const TableData* table, int id);
 void deleteRows(const TableData* table, int id);
-int deleteNotUniqueRow(const TableData* table, size_t entrySize, int id, int (*compare)(void* compareData, void* b), void* compareData);
+int deleteNotUniqueRow(const TableData* table, int id, int (*compare)(void* compareData, void* b), void* compareData);
 
 int getIndexCount(const TableData* table);
 int getNextId(const TableData* table);
@@ -74,7 +75,7 @@ void sortIndex(const TableData* table);
 void writeGarbageRow(const TableData* table, int row);
 int removeLastGarbageRow(const TableData* table);
 
-void clearGarbage(const TableData* table, size_t entrySize);
+void clearGarbage(const TableData* table);
 
 // DataBase Operations
 

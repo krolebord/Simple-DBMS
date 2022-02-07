@@ -47,12 +47,14 @@ errno_t openTable(
 errno_t initializeDb(DataBase* db) {
     _mkdir(DB_FOLDER);
 
+    db->apps.entrySize = APP_SIZE;
     db->apps.getId = getAppId;
     errno_t err = openTable(APP_DB_PATH, APP_INDEX_PATH, APP_GARBAGE_PATH, &db->apps);
     if (err != 0) {
         return err;
     }
 
+    db->teams.entrySize = TEAM_SIZE;
     db->teams.getId = getTeamId;
     err = openTable(TEAM_DB_PATH, TEAM_INDEX_PATH, TEAM_GARBAGE_PATH, &db->teams);
     if (err != 0) {
@@ -63,15 +65,14 @@ errno_t initializeDb(DataBase* db) {
 }
 
 void closeTable(TableData* tableData) {
+    clearGarbage(tableData);
+
     fclose(tableData->dataFile);
     fclose(tableData->indexFile);
     fclose(tableData->garbageFile);
 }
 
 void closeDb(DataBase db) {
-    clearGarbage(&db.apps, APP_SIZE);
     closeTable(&db.apps);
-
-    clearGarbage(&db.teams, TEAM_SIZE);
     closeTable(&db.teams);
 }

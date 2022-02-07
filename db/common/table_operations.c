@@ -50,18 +50,18 @@ int findRowNumbers(const TableData* table, int* numbers, int numbersCount, int i
     return numbersCount;
 }
 
-int readRow(const TableData* table, void* entry, size_t entrySize, int id) {
+int readRow(const TableData* table, void* entry, int id) {
     int row = findRowNumber(table, id);
 
     if(row == -1) {
         return -1;
     }
 
-    readEntryAt(table->dataFile, entry, entrySize, row);
+    readEntryAt(table->dataFile, entry, table->entrySize, row);
     return row;
 }
 
-int readNotUniqueRow(const TableData* table, void* entry, size_t entrySize, int id, int (*compare)(void* compareData, void* b), void* compareData) {
+int readNotUniqueRow(const TableData* table, void* entry, int id, int (*compare)(void* compareData, void* b), void* compareData) {
     int rowsCount = countRows(table, id);
 
     int* rowNumbers = (int*) malloc(sizeof(int) * rowsCount);
@@ -69,7 +69,7 @@ int readNotUniqueRow(const TableData* table, void* entry, size_t entrySize, int 
 
     for (int i = 0; i < rowsCount; ++i) {
         int rowNumber = rowNumbers[i];
-        readEntryAt(table->dataFile, entry, entrySize, rowNumber);
+        readEntryAt(table->dataFile, entry, table->entrySize, rowNumber);
 
         if (!compare(compareData, entry)) {
             continue;
@@ -108,12 +108,12 @@ int countRows(const TableData* table, int id) {
     return count;
 }
 
-int readRows(const TableData* table, void* entries, size_t entrySize, int entriesCount, int id) {
+int readRows(const TableData* table, void* entries, int entriesCount, int id) {
     int* rowNumbers = (int*) malloc(sizeof(int) * entriesCount);
     findRowNumbers(table, rowNumbers, entriesCount, id);
 
     for (int i = 0; i < entriesCount; ++i) {
-        readEntryAt(table->dataFile, ((char *) entries) + i * entrySize, entrySize, rowNumbers[i]);
+        readEntryAt(table->dataFile, ((char *) entries) + i * table->entrySize, table->entrySize, rowNumbers[i]);
     }
 
     free(rowNumbers);
@@ -121,43 +121,43 @@ int readRows(const TableData* table, void* entries, size_t entrySize, int entrie
     return entriesCount;
 }
 
-void insertRow(const TableData* table, void* entry, size_t entrySize, int id) {
+void insertRow(const TableData* table, void* entry, int id) {
     int row = removeLastGarbageRow(table);
 
     if (row == -1) {
-        row = (int)(fileSize(table->dataFile) / entrySize);
-        writeEntryAtEnd(table->dataFile, entry, entrySize);
+        row = (int)(fileSize(table->dataFile) / table->entrySize);
+        writeEntryAtEnd(table->dataFile, entry, table->entrySize);
     }
     else {
-        writeEntryAt(table->dataFile, entry, entrySize, row);
+        writeEntryAt(table->dataFile, entry, table->entrySize, row);
     }
 
     IndexEntry indexEntry = { id, row };
     writeEntryAtEnd(table->indexFile, &indexEntry, INDEX_ENTRY_SIZE);
 }
 
-int updateRow(const TableData* table, void* entry, size_t entrySize) {
+int updateRow(const TableData* table, void* entry) {
     int row = findRowNumber(table, table->getId(entry));
 
     if (row == -1) {
         return -1;
     }
 
-    writeEntryAt(table->dataFile, entry, entrySize, row);
+    writeEntryAt(table->dataFile, entry, table->entrySize, row);
 
     return row;
 }
 
-int updateNotUniqueRow(const TableData* table, void* entry, size_t entrySize, int (*compare)(void* compareData, void* b), void* compareData) {
-    void* tempEntry = malloc(entrySize);
-    int row = readNotUniqueRow(table, tempEntry, entrySize, table->getId(entry), compare, compareData);
+int updateNotUniqueRow(const TableData* table, void* entry, int (*compare)(void* compareData, void* b), void* compareData) {
+    void* tempEntry = malloc(table->entrySize);
+    int row = readNotUniqueRow(table, tempEntry, table->getId(entry), compare, compareData);
     free(tempEntry);
 
     if (row == -1) {
         return -1;
     }
 
-    writeEntryAt(table->dataFile, entry, entrySize, row);
+    writeEntryAt(table->dataFile, entry, table->entrySize, row);
 
     return row;
 }
@@ -201,7 +201,7 @@ void deleteRows(const TableData* table, int id) {
     while (deleteRow(table, id) != -1);
 }
 
-int deleteNotUniqueRow(const TableData* table, size_t entrySize, int id, int (*compare)(void* compareData, void* b), void* compareData) {
+int deleteNotUniqueRow(const TableData* table, int id, int (*compare)(void* compareData, void* b), void* compareData) {
     int indexCount = getIndexCount(table);
 
     if (indexCount == 0) {
@@ -220,9 +220,9 @@ int deleteNotUniqueRow(const TableData* table, size_t entrySize, int id, int (*c
     }
 
     int row = -1;
-    void* tempEntry = malloc(entrySize);
+    void* tempEntry = malloc(table->entrySize);
     for(int i = 0; i < entriesCount; ++i) {
-        readEntryAt(table->dataFile, tempEntry, entrySize, index[entryIndex + i].row);
+        readEntryAt(table->dataFile, tempEntry, table->entrySize, index[entryIndex + i].row);
 
         if (!compare(compareData, tempEntry)) {
             continue;
